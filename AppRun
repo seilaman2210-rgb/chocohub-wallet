@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+HERE="$(dirname "$(readlink -f "$0")")"
+
+export PATH="$HERE/usr/bin:$PATH"
+export PYTHONPATH="$HERE/opt/chocohub${PYTHONPATH:+:$PYTHONPATH}"
+
+# Force the bundled CA bundle so HTTPS verification can't be broken by
+# host SSL_CERT_FILE/SSL_CERT_DIR overrides (python-appimage's manylinux
+# default paths are RHEL-style and don't exist on this system).
+export SSL_CERT_FILE="$HERE/opt/chocohub/cacert.pem"
+unset SSL_CERT_DIR
+
+# Use the user's existing wallet directory when the storage is mounted.
+DEFAULT_WALLETS="/run/media/chocoetom/B8B44D89B44D4B58/chocohubSTORAGE/CCPOC/MiniNode/wallets"
+if [ -z "$WALLET_DIR" ] && [ -d "$DEFAULT_WALLETS" ]; then
+    export WALLET_DIR="$DEFAULT_WALLETS"
+fi
+
+exec "$HERE/opt/python3.13/bin/python3.13" -m chocohub_gui.server "$@"
